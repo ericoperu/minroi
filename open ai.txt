@@ -1,4 +1,0 @@
-firebase functions:config:set openai.key="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"
-
-firebase functions:secrets:set OPEN_AI_VAR
-
