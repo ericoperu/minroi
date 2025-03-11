@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Gastos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md flex flex-col md:flex-row gap-6">
+        <!-- Bloque Izquierdo (Carga de PDF) -->
+        <div class="w-full md:w-1/2 flex flex-col items-center">
+            <h2 class="text-xl font-bold mb-4">Selecciona tu Analisis en PDF</h2>
+            <label for="pdfInput" class="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded cursor-pointer mb-4 hover:bg-blue-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-white">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6m-7 6h14a2 2 0 002-2V7a2 2 0 00-.59-1.41L15.41 2A2 2 0 0014 1H6a2 2 0 00-2 2v16a2 2 0 002 2z" />
+                </svg>
+                Seleccionar PDF
+            </label>
+            
+            <input type="file" id="pdfInput" accept="application/pdf" class="hidden" onchange="handleFileUpload(event)">
+            <div id="pdfPreview" class="w-full border rounded p-4 flex flex-col items-center justify-center bg-gray-50">
+                <p class="text-gray-500">No se ha seleccionado ningún archivo</p>
+            </div>
+            <p id="fileName" class="mt-2 text-gray-700"></p>
+        </div>
+
+        <!-- Bloque Derecho (Opciones de Cálculo) -->
+        <div class="w-full md:w-1/2">
+            <h2 class="text-xl font-bold mb-4">Opciones de Cálculo de Gastos</h2>
+            
+            <!-- Opciones Radio -->
+            <div class="mb-4">
+                <label class="block bg-gray-100 p-3 rounded-lg cursor-pointer">
+                    <input type="radio" name="calculo" value="sin_gastos" class="mr-2" checked onchange="toggleInputs()"> Sin Gastos
+                </label>
+                <label class="block bg-gray-100 p-3 rounded-lg cursor-pointer mt-2">
+                    <input type="radio" name="calculo" value="general" class="mr-2" onchange="toggleInputs()"> Gasto General por Tonelada Metrica
+                </label>
+                <label class="block bg-gray-100 p-3 rounded-lg cursor-pointer mt-2">
+                    <input type="radio" name="calculo" value="detallado" class="mr-2" onchange="toggleInputs()"> Gastos Detallados
+                </label>
+            </div>
+            
+            <!-- Gastos Generales -->
+            <div id="gastoGeneral" class="hidden p-4 bg-gray-50 rounded-lg">
+                <label class="block font-semibold mb-2">Gastos Generales por Tonelada</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="gastoGeneralInput" class="border p-2 w-full rounded" placeholder="0.00" step="0.01">
+                    <span>$/TM</span>
+                </div>
+            </div>
+
+            <!-- Gastos Detallados -->
+            <div id="gastoDetallado" class="hidden p-4 bg-gray-50 rounded-lg">
+                <label class="block font-semibold mb-2">Gastos Detallados</label>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2"><span>Exploración</span><input type="number" class="border p-2 w-full rounded gastoDetalle" placeholder="0.00" step="0.01"><span>$/TM</span></div>
+                    <div class="flex items-center gap-2"><span>Transporte</span><input type="number" class="border p-2 w-full rounded gastoDetalle" placeholder="0.00" step="0.01"><span>$/TM</span></div>
+                    <div class="flex items-center gap-2"><span>Procesamiento</span><input type="number" class="border p-2 w-full rounded gastoDetalle" placeholder="0.00" step="0.01"><span>$/TM</span></div>
+                    <div class="flex items-center gap-2"><span>Administración</span><input type="number" class="border p-2 w-full rounded gastoDetalle" placeholder="0.00" step="0.01"><span>$/TM</span></div>
+                    <div class="flex items-center gap-2"><span>Otros</span><input type="number" class="border p-2 w-full rounded gastoDetalle" placeholder="0.00" step="0.01"><span>$/TM</span></div>
+                </div>
+                <hr class="my-3">
+                <div class="flex justify-between font-bold text-lg">
+                    <span>TOTAL:</span>
+                    <span id="totalGastos">0.00 $/TM</span>
+                </div>
+            </div>
+            
+            <!-- Botón Generar Informe -->
+            <button class="mt-4 w-full bg-green-500 text-white py-3 rounded-lg" id="generarInforme">Generar Informe</button>
+        </div>
+    </div>
+
+    <script>
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                document.getElementById('pdfPreview').innerHTML = `<iframe src="${fileURL}" class="w-full h-70"></iframe>`;
+                document.getElementById('fileName').textContent = file.name;
+            }
+        }
+
+        function toggleInputs() {
+            document.getElementById('gastoGeneral').classList.add('hidden');
+            document.getElementById('gastoDetallado').classList.add('hidden');
+            
+            const selectedValue = document.querySelector('input[name="calculo"]:checked').value;
+            if (selectedValue === "general") {
+                document.getElementById('gastoGeneral').classList.remove('hidden');
+            } else if (selectedValue === "detallado") {
+                document.getElementById('gastoDetallado').classList.remove('hidden');
+            }
+        }
+
+        document.querySelectorAll('.gastoDetalle').forEach(input => {
+            input.addEventListener('input', () => {
+                let total = 0;
+                document.querySelectorAll('.gastoDetalle').forEach(i => {
+                    total += parseFloat(i.value) || 0;
+                });
+                document.getElementById('totalGastos').textContent = total.toFixed(2) + " $/TM";
+            });
+        });
+    </script>
+    <script src="assets/js/send_analisys.js"></script>
+</body>
+</html>
